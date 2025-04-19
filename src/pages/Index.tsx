@@ -1,103 +1,140 @@
 
-import React, { useState } from 'react';
-import AutomatonVisualizer from '@/components/AutomatonVisualizer';
-import AutomatonControls from '@/components/AutomatonControls';
+import React from 'react';
+import AuthVisualizer from '@/components/AuthVisualizer';
+import AuthControls from '@/components/AuthControls';
+import { Card } from "@/components/ui/card";
 
-// Example DFA for a simple binary number divisible by 3
+// DFA States for Authentication
 const dfaStates = [
-  { id: "q0", x: 100, y: 150, isInitial: true },
-  { id: "q1", x: 200, y: 150 },
-  { id: "q2", x: 300, y: 150, isFinal: true },
+  { id: "q0", x: 100, y: 150, isInitial: true, label: "Login" },
+  { id: "q1", x: 200, y: 150, label: "User Check" },
+  { id: "q2", x: 300, y: 150, label: "Pass (1st)" },
+  { id: "q3", x: 400, y: 150, label: "Pass (2nd)" },
+  { id: "q4", x: 500, y: 150, label: "Pass (3rd)" },
+  { id: "q5", x: 300, y: 250, isFinal: true, label: "Access" },
+  { id: "q6", x: 500, y: 250, label: "Blocked" },
 ];
 
 const dfaTransitions = [
-  { from: "q0", to: "q0", symbol: "0" },
-  { from: "q0", to: "q1", symbol: "1" },
-  { from: "q1", to: "q2", symbol: "0" },
-  { from: "q1", to: "q0", symbol: "1" },
-  { from: "q2", to: "q1", symbol: "0" },
-  { from: "q2", to: "q2", symbol: "1" },
+  { from: "q0", to: "q1", symbol: "u" },
+  { from: "q0", to: "q0", symbol: "n" },
+  { from: "q1", to: "q5", symbol: "c" },
+  { from: "q1", to: "q2", symbol: "i" },
+  { from: "q2", to: "q5", symbol: "c" },
+  { from: "q2", to: "q3", symbol: "i" },
+  { from: "q3", to: "q5", symbol: "c" },
+  { from: "q3", to: "q4", symbol: "i" },
+  { from: "q4", to: "q5", symbol: "c" },
+  { from: "q4", to: "q6", symbol: "i" },
 ];
 
-// Example NFA for strings ending with "01"
+// NFA States for Authentication with 2FA
 const nfaStates = [
-  { id: "s0", x: 100, y: 150, isInitial: true },
-  { id: "s1", x: 200, y: 150 },
-  { id: "s2", x: 300, y: 150, isFinal: true },
+  { id: "q0", x: 100, y: 150, isInitial: true, label: "Login" },
+  { id: "q1", x: 200, y: 150, label: "User Check" },
+  { id: "q2", x: 300, y: 150, label: "Pass (1st)" },
+  { id: "q3", x: 400, y: 150, label: "Pass (2nd)" },
+  { id: "q4", x: 500, y: 150, label: "Pass (3rd)" },
+  { id: "q5", x: 300, y: 250, label: "2FA Choice" },
+  { id: "q6", x: 200, y: 350, label: "SMS" },
+  { id: "q7", x: 300, y: 350, label: "Email" },
+  { id: "q8", x: 400, y: 350, label: "App" },
+  { id: "q9", x: 300, y: 450, isFinal: true, label: "Access" },
+  { id: "q10", x: 500, y: 250, label: "Blocked" },
 ];
 
 const nfaTransitions = [
-  { from: "s0", to: "s0", symbol: "0" },
-  { from: "s0", to: "s0", symbol: "1" },
-  { from: "s0", to: "s1", symbol: "0" },
-  { from: "s1", to: "s2", symbol: "1" },
+  { from: "q0", to: "q1", symbol: "u" },
+  { from: "q0", to: "q0", symbol: "n" },
+  { from: "q1", to: "q5", symbol: "c" },
+  { from: "q1", to: "q9", symbol: "c" },
+  { from: "q1", to: "q2", symbol: "i" },
+  { from: "q2", to: "q5", symbol: "c" },
+  { from: "q2", to: "q9", symbol: "c" },
+  { from: "q2", to: "q3", symbol: "i" },
+  { from: "q3", to: "q5", symbol: "c" },
+  { from: "q3", to: "q9", symbol: "c" },
+  { from: "q3", to: "q4", symbol: "i" },
+  { from: "q4", to: "q5", symbol: "c" },
+  { from: "q4", to: "q9", symbol: "c" },
+  { from: "q4", to: "q10", symbol: "i" },
+  { from: "q5", to: "q6", symbol: "s" },
+  { from: "q5", to: "q7", symbol: "e" },
+  { from: "q5", to: "q8", symbol: "a" },
+  { from: "q6", to: "q9", symbol: "v" },
+  { from: "q6", to: "q6", symbol: "f" },
+  { from: "q7", to: "q9", symbol: "v" },
+  { from: "q7", to: "q7", symbol: "f" },
+  { from: "q8", to: "q9", symbol: "v" },
+  { from: "q8", to: "q8", symbol: "f" },
 ];
 
 const Index = () => {
-  const [dfaCurrentState, setDfaCurrentState] = useState("q0");
-  const [nfaCurrentState, setNfaCurrentState] = useState("s0");
-
-  const handleDfaInput = (symbol: string) => {
-    const transition = dfaTransitions.find(
-      t => t.from === dfaCurrentState && t.symbol === symbol
-    );
-    if (transition) {
-      setDfaCurrentState(transition.to);
-    }
-  };
-
-  const handleNfaInput = (symbol: string) => {
-    const possibleTransitions = nfaTransitions.filter(
-      t => t.from === nfaCurrentState && t.symbol === symbol
-    );
-    if (possibleTransitions.length > 0) {
-      // For simplicity, we'll just take the first possible transition
-      setNfaCurrentState(possibleTransitions[0].to);
-    }
-  };
-
+  const [dfaCurrentState, setDfaCurrentState] = React.useState("q0");
+  const [nfaCurrentState, setNfaCurrentState] = React.useState("q0");
+  
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto space-y-8 px-4">
+      <div className="max-w-6xl mx-auto space-y-8 px-4">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Automaton Simulator</h1>
-          <p className="text-gray-600">Explore Deterministic and Non-deterministic Finite Automata</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Authentication System Simulator</h1>
+          <p className="text-gray-600">Explore Deterministic and Non-deterministic Authentication Flows</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* DFA Section */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800">Deterministic Finite Automaton</h2>
-            <AutomatonVisualizer
+          <Card className="p-6 space-y-4">
+            <h2 className="text-xl font-semibold text-gray-800">Basic Authentication (DFA)</h2>
+            <AuthVisualizer
               states={dfaStates}
               transitions={dfaTransitions}
               currentState={dfaCurrentState}
               type="DFA"
             />
-            <AutomatonControls
-              onInput={handleDfaInput}
-              allowedInputs={["0", "1"]}
-              currentState={dfaCurrentState}
+            <AuthControls
               type="DFA"
+              currentState={dfaCurrentState}
+              onStateChange={setDfaCurrentState}
+              allowedInputs={{
+                q0: ["u", "n"],
+                q1: ["c", "i"],
+                q2: ["c", "i"],
+                q3: ["c", "i"],
+                q4: ["c", "i"],
+                q5: [],
+                q6: [],
+              }}
             />
-          </div>
+          </Card>
 
           {/* NFA Section */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800">Non-deterministic Finite Automaton</h2>
-            <AutomatonVisualizer
+          <Card className="p-6 space-y-4">
+            <h2 className="text-xl font-semibold text-gray-800">2FA Authentication (NFA)</h2>
+            <AuthVisualizer
               states={nfaStates}
               transitions={nfaTransitions}
               currentState={nfaCurrentState}
               type="NFA"
             />
-            <AutomatonControls
-              onInput={handleNfaInput}
-              allowedInputs={["0", "1"]}
-              currentState={nfaCurrentState}
+            <AuthControls
               type="NFA"
+              currentState={nfaCurrentState}
+              onStateChange={setNfaCurrentState}
+              allowedInputs={{
+                q0: ["u", "n"],
+                q1: ["c", "i"],
+                q2: ["c", "i"],
+                q3: ["c", "i"],
+                q4: ["c", "i"],
+                q5: ["s", "e", "a"],
+                q6: ["v", "f"],
+                q7: ["v", "f"],
+                q8: ["v", "f"],
+                q9: [],
+                q10: [],
+              }}
             />
-          </div>
+          </Card>
         </div>
       </div>
     </div>
