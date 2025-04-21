@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import AuthUserExperience from "./AuthUserExperience";
 
 const AuthSimulator = () => {
   // Todos os estados e lógica do seu código original, mais a nova funcionalidade de cadastro
@@ -26,9 +27,9 @@ const AuthSimulator = () => {
     { id: "q-1", x: 150, y: 80, label: "Cadastro", icon: <UserPlus /> },
     { id: "q0", x: 250, y: 150, label: "Login", icon: <User /> },
     { id: "q1", x: 400, y: 150, label: "User Check", icon: <User /> },
-    { id: "q2", x: 550, y: 150, label: "Pass (1ª tentativa)", icon: <Key /> },
+    { id: "q2", x: 550, y: 120, label: "Pass (1ª tentativa)", icon: <Key /> },
     { id: "q3", x: 550, y: 250, label: "Pass (2ª tentativa)", icon: <Key /> },
-    { id: "q4", x: 550, y: 350, label: "Pass (3ª tentativa)", icon: <Key /> },
+    { id: "q4", x: 550, y: 380, label: "Pass (3ª tentativa)", icon: <Key /> },
     { id: "q5", x: 700, y: 150, isFinal: true, label: "Acesso Concedido", icon: <Check /> },
     { id: "q6", x: 700, y: 350, label: "Conta Bloqueada", icon: <Lock /> },
   ];
@@ -115,7 +116,6 @@ const AuthSimulator = () => {
   const [nfaCurrentState, setNfaCurrentState] = useState("q-2");
   const [history, setHistory] = useState([]);
   const [showExplanation, setShowExplanation] = useState(true);
-  const [autoMode, setAutoMode] = useState("manual");
   
   // Função para processar o cadastro
   const handleCadastro = () => {
@@ -200,45 +200,46 @@ const AuthSimulator = () => {
       setEmail("");
     }
   };
-  
-  // Componente de visualização do autômato (mesmo código que você já tem)
-  // Componente de visualização do autômato
+
 // Componente de visualização do autômato
 const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
   const stateRadius = 30;
   const width = 900;
   const height = 400;
-  
-  // Estados para controlar o deslocamento, zoom e interação
-  const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: width, height: height });
+
+  const getAvailableInputs = (type, state) => {
+    const validTransitions = transitions.filter(t => t.from === state);
+    const uniqueInputs = Array.from(new Set(validTransitions.map(t => t.symbol)));
+    return uniqueInputs;
+  };
+
+  const [viewBox, setViewBox] = useState({ x: 0, y: 0, width, height });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [zoomLevel, setZoomLevel] = useState(1);
-  
-  // Efeito para centralizar automaticamente o estado atual e aplicar zoom
+
   React.useEffect(() => {
     const activeState = states.find(s => s.id === currentState);
     if (activeState) {
       const targetX = activeState.x - (width / (2 * zoomLevel));
       const targetY = activeState.y - (height / (2 * zoomLevel));
-      setViewBox(prev => ({
-        ...prev,
+      setViewBox({
         x: targetX,
         y: targetY,
         width: width / zoomLevel,
         height: height / zoomLevel
-      }));
+      });
     }
-  }, [currentState, states, width, height, zoomLevel]);
+  }, [currentState, zoomLevel, states]);
 
   return (
-    <div className="w-full border border-gray-200 rounded-lg overflow-hidden bg-white">
-      <svg 
-        width={width} 
+    <div className="w-full border border-gray-200 rounded-lg overflow-hidden bg-white relative">
+      <svg
+        width="100%"
         height={height}
         viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
         onMouseDown={(e) => {
-          if (e.button === 0) { // Botão esquerdo do mouse
+          if (e.button === 0) {
             setIsDragging(true);
             setDragStart({ x: e.clientX, y: e.clientY });
           }
@@ -247,25 +248,23 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
           if (isDragging) {
             const dx = e.clientX - dragStart.x;
             const dy = e.clientY - dragStart.y;
-            setViewBox(prev => ({
+            setViewBox((prev) => ({
               ...prev,
-              x: prev.x - dx * 0.5 / zoomLevel,
-              y: prev.y - dy * 0.5 / zoomLevel
+              x: prev.x - dx * 1.5 / zoomLevel,
+              y: prev.y - dy * 1.5 / zoomLevel
             }));
             setDragStart({ x: e.clientX, y: e.clientY });
           }
         }}
         onMouseUp={() => setIsDragging(false)}
         onMouseLeave={() => setIsDragging(false)}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        style={{ cursor: isDragging ? "grabbing" : "grab" }}
       >
-        {/* Linhas de transição */}
         {transitions.map((transition, index) => {
           const fromState = states.find(s => s.id === transition.from);
           const toState = states.find(s => s.id === transition.to);
           if (!fromState || !toState) return null;
 
-          // Auto-transição (self-loop)
           if (transition.from === transition.to) {
             return (
               <g key={index}>
@@ -292,18 +291,13 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
             );
           }
 
-          // Transição normal (linha curva)
           const dx = toState.x - fromState.x;
           const dy = toState.y - fromState.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          // Para transições inversas, aumentar a curvatura
-          const isSameStates = transitions.some(t => 
-            t.from === transition.to && t.to === transition.from
-          );
-          
-          // Ajustar curvatura com base na direção
-          const curvature = isSameStates ? 0.3 : 0.1;
+          const hasInverse = transitions.some(t => t.from === transition.to && t.to === transition.from);
+          const sameDirectionTransitions = transitions.filter(t => t.from === transition.from && t.to === transition.to);
+          const offsetIndex = sameDirectionTransitions.findIndex(t => t === transition);
+          const baseCurvature = hasInverse ? 0.3 : 0.1;
+          const curvature = baseCurvature + offsetIndex * 0.05;
           const mx = (fromState.x + toState.x) / 2;
           const my = (fromState.y + toState.y) / 2;
           const cx = mx - dy * curvature;
@@ -331,15 +325,13 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
           );
         })}
 
-        {/* Estados */}
         {states.map((state) => {
           const isActive = currentState === state.id;
           const isFinal = state.isFinal;
           const isInitial = state.isInitial;
-          
+
           return (
             <g key={state.id} className="cursor-pointer">
-              {/* Estado inicial (seta) */}
               {isInitial && (
                 <path
                   d={`M${state.x - 45},${state.y} L${state.x - stateRadius - 5},${state.y}`}
@@ -348,8 +340,7 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
                   markerEnd="url(#arrowhead)"
                 />
               )}
-              
-              {/* Círculo do estado */}
+
               <circle
                 cx={state.x}
                 cy={state.y}
@@ -357,10 +348,7 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
                 fill={isActive ? "#818cf8" : "white"}
                 stroke={isFinal ? "#4f46e5" : isActive ? "#4f46e5" : "#CBD5E1"}
                 strokeWidth={isFinal || isActive ? "3" : "2"}
-                onClick={() => console.log(`Clicou no estado ${state.id}`)}
               />
-              
-              {/* Círculo duplo para estados finais */}
               {isFinal && (
                 <circle
                   cx={state.x}
@@ -371,8 +359,6 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
                   strokeWidth="2"
                 />
               )}
-              
-              {/* Ícone do estado */}
               <foreignObject
                 x={state.x - 12}
                 y={state.y - 12}
@@ -381,39 +367,59 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
                 className="pointer-events-none"
               >
                 <div className="flex items-center justify-center text-sm">
-                  {React.cloneElement(state.icon, { 
-                    size: 16, 
-                    className: isActive ? "text-white" : "text-gray-600" 
+                  {React.cloneElement(state.icon, {
+                    size: 16,
+                    className: isActive ? "text-white" : "text-gray-600"
                   })}
                 </div>
               </foreignObject>
-              
-              {/* Rótulo do estado */}
-              <text
-                x={state.x}
-                y={state.y + stateRadius + 15}
-                textAnchor="middle"
-                fill={isActive ? "#4338ca" : "#1F2937"}
-                className="text-xs font-medium pointer-events-none"
-              >
-                {state.label}
-              </text>
-              
-              {/* ID do estado */}
-              <text
-                x={state.x}
-                y={state.y + stateRadius + 30}
-                textAnchor="middle"
-                fill="#64748B"
-                className="text-xs pointer-events-none"
-              >
-                {state.id}
-              </text>
+              {state.id === "q2" ? (
+                <>
+                  <text
+                    x={state.x}
+                    y={state.y - stateRadius - 25}
+                    textAnchor="middle"
+                    fill={isActive ? "#4338ca" : "#1F2937"}
+                    className="text-xs font-medium pointer-events-none"
+                  >
+                    {state.label}
+                  </text>
+                  <text
+                    x={state.x}
+                    y={state.y - stateRadius - 10}
+                    textAnchor="middle"
+                    fill="#64748B"
+                    className="text-xs pointer-events-none"
+                  >
+                    {state.id}
+                  </text>
+                </>
+              ) : (
+                <>
+                  <text
+                    x={state.x}
+                    y={state.y + stateRadius + 15}
+                    textAnchor="middle"
+                    fill={isActive ? "#4338ca" : "#1F2937"}
+                    className="text-xs font-medium pointer-events-none"
+                  >
+                    {state.label}
+                  </text>
+                  <text
+                    x={state.x}
+                    y={state.y + stateRadius + 30}
+                    textAnchor="middle"
+                    fill="#64748B"
+                    className="text-xs pointer-events-none"
+                  >
+                    {state.id}
+                  </text>
+                </>
+              )}
             </g>
           );
         })}
-        
-        {/* Definições para setas */}
+
         <defs>
           <marker
             id="arrowhead"
@@ -423,16 +429,12 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
             refY="3.5"
             orient="auto"
           >
-            <polygon
-              points="0 0, 10 3.5, 0 7"
-              fill="#94A3B8"
-            />
+            <polygon points="0 0, 10 3.5, 0 7" fill="#94A3B8" />
           </marker>
         </defs>
       </svg>
-      
-      {/* Controles de zoom */}
-      <div className="flex justify-end mt-2 space-x-2">
+
+      <div className="absolute bottom-2 right-2 flex space-x-2 bg-white bg-opacity-80 rounded-md shadow p-1">
         <Button
           variant="outline"
           size="sm"
@@ -505,97 +507,6 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
     );
   };
 
-  // Componente de formulário de cadastro
-  const SignupForm = () => {
-    return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Cadastro de Usuário</CardTitle>
-          <CardDescription>
-            Preencha os campos abaixo para simular o cadastro de um novo usuário
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Nome de Usuário</Label>
-                <Input
-                  id="username"
-                  placeholder="Digite seu nome de usuário"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Digite seu email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Digite sua senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <p className="text-xs text-gray-500">
-                  A senha deve ter pelo menos 6 caracteres
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Confirme sua senha"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button onClick={handleCadastro}>
-                Cadastrar
-              </Button>
-            </div>
-            
-            {cadastroError && (
-              <Alert className="bg-red-50 border-red-100">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertTitle className="text-red-700">Erro no cadastro</AlertTitle>
-                <AlertDescription className="text-red-600">
-                  {cadastroError}
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            {cadastroSuccess && (
-              <Alert className="bg-green-50 border-green-100">
-                <Check className="h-4 w-4 text-green-600" />
-                <AlertTitle className="text-green-700">Cadastro realizado com sucesso!</AlertTitle>
-                <AlertDescription className="text-green-600">
-                  Você pode agora prosseguir para o login. O autômato avançou para o próximo estado.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto space-y-6 px-4">
@@ -621,7 +532,8 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
             </Button>
           </Alert>
         )}
-
+      
+      {showExplanation && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Card>
             <CardHeader>
@@ -644,13 +556,12 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
               </CardTitle>
               <CardDescription>
                 Um AFN pode ter múltiplas transições para uma entrada em um estado. 
-                Este modelo
-                Um AFN pode ter múltiplas transições para uma entrada em um estado. 
                 Este modelo representa um sistema completo com cadastro, login e opções de verificação em duas etapas.
               </CardDescription>
             </CardHeader>
           </Card>
         </div>
+      )}
 
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-4">
@@ -662,20 +573,6 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
               <RefreshCw size={16} />
               Reiniciar Simulação
             </Button>
-            
-            {/* Controles de modo de simulação */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Modo:</span>
-              <select
-                value={autoMode}
-                onChange={(e) => setAutoMode(e.target.value)}
-                className="text-sm rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-              >
-                <option value="manual">Manual</option>
-                <option value="guided">Guiado</option>
-                <option value="auto">Automático</option>
-              </select>
-            </div>
           </div>
           
           <div className="flex items-center gap-2">
@@ -687,17 +584,15 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
           </div>
         </div>
 
-        <Tabs defaultValue="signup" className="mb-6">
+        <Tabs defaultValue="user-experience" className="mb-6">
           <TabsList className="mb-4">
-            <TabsTrigger value="signup">Cadastro</TabsTrigger>
+          <TabsTrigger value="user-experience">Experiência do Usuário</TabsTrigger>
             <TabsTrigger value="side-by-side">Simulador Lado a Lado</TabsTrigger>
             <TabsTrigger value="dfa">Apenas AFD</TabsTrigger>
             <TabsTrigger value="nfa">Apenas AFN</TabsTrigger>
           </TabsList>
           
           <TabsContent value="signup">
-            <SignupForm />
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Visualização AFD no modo de cadastro */}
               <Card>
@@ -1038,6 +933,41 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
                     </AlertDescription>
                   </Alert>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="user-experience">
+            <Card>
+              <CardHeader>
+                <CardTitle>Experiência de Usuário com Autenticação</CardTitle>
+                <CardDescription>
+                  Esta simulação mostra como um usuário real experimentaria um sistema de autenticação
+                  modelado por autômatos finitos, com interface completa para cadastro, login e 2FA.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="p-4 bg-gray-50 rounded-lg mb-6">
+                  <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                    <Info className="text-indigo-500" size={20} />
+                    Sobre esta simulação
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Enquanto as outras abas mostram os autômatos de uma perspectiva teórica/acadêmica,
+                    esta simulação demonstra como um usuário real interagiria com o sistema. Os mesmos
+                    estados e transições do autômato estão acontecendo por baixo, mas agora com uma 
+                    interface amigável que esconde a complexidade técnica.
+                  </p>
+                </div>
+                
+                {/* Integração do componente AuthUserExperience */}
+                <div className="border rounded-lg p-4 bg-white">
+                  <AuthUserExperience 
+                    onStateChange={(state) => {
+                      // Opcionalmente, você pode manipular as mudanças de estado aqui
+                      console.log("Mudança de estado na experiência do usuário:", state);
+                    }}
+                  />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
