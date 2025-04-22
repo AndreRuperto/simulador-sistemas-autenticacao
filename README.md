@@ -74,46 +74,6 @@ src/
 └── lib/               # Utilitários e funções auxiliares
 ```
 
-## Como Colaborar
-
-1. Faça um fork do repositório
-2. Crie uma branch para sua feature: `git checkout -b minha-nova-feature`
-3. Faça commit das suas alterações: `git commit -m 'Adiciona nova feature'`
-4. Envie para seu fork: `git push origin minha-nova-feature`
-5. Abra um Pull Request no repositório original
-
-## Deployment
-
-### Deploy com Railway
-
-Para fazer o deploy deste projeto no Railway, crie um arquivo `Dockerfile` na raiz do projeto com o seguinte conteúdo:
-
-```dockerfile
-FROM node:18-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-RUN npm run build
-
-EXPOSE 8080
-
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0"]
-```
-
-Depois, basta conectar seu repositório GitHub ao Railway e configurar o deployment.
-
-### Deploy com Vercel ou Netlify
-
-O projeto também é compatível com plataformas como Vercel e Netlify. Basta conectar o repositório e seguir as instruções de deployment.
-
-## Contexto Acadêmico
-
-Este projeto foi desenvolvido como parte de um trabalho acadêmico sobre Teoria da Computação, especificamente explorando como os conceitos de autômatos finitos podem ser aplicados para modelar sistemas reais de autenticação. O simulador demonstra a transição da teoria para aplicações práticas em segurança da informação.
-
 ## Licença
 
 Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para mais detalhes.
