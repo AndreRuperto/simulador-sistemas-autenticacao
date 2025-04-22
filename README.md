@@ -1,73 +1,123 @@
-# Welcome to your Lovable project
+# Simulador de Autômatos para Sistemas de Autenticação
 
-## Project info
+## Sobre o Projeto
 
-**URL**: https://lovable.dev/projects/a9867023-83bf-4c6e-8024-9d07a6d70565
+Este projeto é um simulador interativo que demonstra como autômatos finitos podem modelar sistemas de autenticação, incluindo processos de cadastro, login e verificação em duas etapas (2FA). A aplicação oferece visualizações gráficas de Autômatos Finitos Determinísticos (AFD) e Autômatos Finitos Não-Determinísticos (AFN), permitindo explorar os diferentes fluxos e estados de um sistema de autenticação moderno.
 
-## How can I edit this code?
+## Funcionalidades
 
-There are several ways of editing your application.
+- **Simulação Visual de Autômatos**: Visualize e interaja com autômatos que representam sistemas de autenticação
+- **Experiência de Usuário Realista**: Interface que simula uma experiência real de cadastro, login e verificação
+- **Comparação AFD vs AFN**: Observe as diferenças entre abordagens determinísticas e não-determinísticas
+- **Histórico de Transições**: Acompanhe a sequência de estados e transições realizadas
 
-**Use Lovable**
+## Tecnologias Utilizadas
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a9867023-83bf-4c6e-8024-9d07a6d70565) and start prompting.
+- **React + TypeScript**: Para criar uma interface de usuário robusta e bem tipada
+- **Vite**: Como ferramenta de build e desenvolvimento
+- **Tailwind CSS**: Para estilização eficiente e responsiva
+- **shadcn/ui**: Componentes de UI modulares e personalizáveis
+- **Lucide React**: Para ícones expressivos e consistentes
 
-Changes made via Lovable will be committed automatically to this repo.
+## Como Executar o Projeto Localmente
 
-**Use your preferred IDE**
+### Pré-requisitos
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js (recomendado v16+)
+- npm ou yarn
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Passos para Instalação
 
-Follow these steps:
+1. **Clone o repositório**
+   ```bash
+   git clone <URL_DO_REPOSITÓRIO>
+   cd automato-auth-simulator
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2. **Instale as dependências**
+   ```bash
+   npm install
+   # ou
+   yarn install
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+3. **Inicie o servidor de desenvolvimento**
+   ```bash
+   npm run dev
+   # ou
+   yarn dev
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+4. **Acesse a aplicação**
+   
+   Abra seu navegador e acesse `http://localhost:8080`
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## Como Usar o Simulador
+
+1. **Modo Experiência do Usuário**: Interaja com uma interface real de autenticação
+2. **Simulador Lado a Lado**: Compare os modelos AFD e AFN simultaneamente
+3. **Apenas AFD**: Foque no modelo determinístico mais simples
+4. **Apenas AFN**: Explore o modelo não-determinístico com múltiplos caminhos
+
+## Estrutura do Projeto
+
+```
+src/
+├── components/        # Componentes React reutilizáveis
+│   ├── ui/            # Componentes UI base (shadcn/ui)
+│   ├── AutomatonVisualizer.tsx    # Visualizador dos autômatos
+│   ├── AuthControls.tsx           # Controles de interação
+│   ├── AuthSimulator.tsx          # Componente principal do simulador
+│   └── AuthUserExperience.tsx     # Interface de usuário realista
+├── hooks/             # Hooks React customizados
+├── pages/             # Páginas da aplicação
+└── lib/               # Utilitários e funções auxiliares
 ```
 
-**Edit a file directly in GitHub**
+## Como Colaborar
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Faça um fork do repositório
+2. Crie uma branch para sua feature: `git checkout -b minha-nova-feature`
+3. Faça commit das suas alterações: `git commit -m 'Adiciona nova feature'`
+4. Envie para seu fork: `git push origin minha-nova-feature`
+5. Abra um Pull Request no repositório original
 
-**Use GitHub Codespaces**
+## Deployment
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Deploy com Railway
 
-## What technologies are used for this project?
+Para fazer o deploy deste projeto no Railway, crie um arquivo `Dockerfile` na raiz do projeto com o seguinte conteúdo:
 
-This project is built with:
+```dockerfile
+FROM node:18-alpine
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+WORKDIR /app
 
-## How can I deploy this project?
+COPY package*.json ./
+RUN npm install
 
-Simply open [Lovable](https://lovable.dev/projects/a9867023-83bf-4c6e-8024-9d07a6d70565) and click on Share -> Publish.
+COPY . .
+RUN npm run build
 
-## Can I connect a custom domain to my Lovable project?
+EXPOSE 8080
 
-Yes, you can!
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0"]
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Depois, basta conectar seu repositório GitHub ao Railway e configurar o deployment.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Deploy com Vercel ou Netlify
+
+O projeto também é compatível com plataformas como Vercel e Netlify. Basta conectar o repositório e seguir as instruções de deployment.
+
+## Contexto Acadêmico
+
+Este projeto foi desenvolvido como parte de um trabalho acadêmico sobre Teoria da Computação, especificamente explorando como os conceitos de autômatos finitos podem ser aplicados para modelar sistemas reais de autenticação. O simulador demonstra a transição da teoria para aplicações práticas em segurança da informação.
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para mais detalhes.
+
+## Contato
+
+Para dúvidas, sugestões ou colaborações, fique a vontade para entrar em contato!
