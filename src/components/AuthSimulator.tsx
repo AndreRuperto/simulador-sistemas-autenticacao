@@ -12,7 +12,6 @@ import AuthUserExperience from "./AuthUserExperience";
 import { Switch } from "@/components/ui/switch";
 
 const AuthSimulator = () => {
-  // Todos os estados e lógica do seu código original, mais a nova funcionalidade de cadastro
   
   // Estados para o formulário de cadastro
   const [username, setUsername] = useState("");
