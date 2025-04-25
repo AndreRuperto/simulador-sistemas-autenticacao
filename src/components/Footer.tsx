@@ -30,7 +30,7 @@ const Footer = () => {
             <div>José Henrique da Silva Mata - 30525187</div>
             <div>Miguel de Moraes Bastos - 30129061</div>
             <div>André Ruperto de Macêdo - 30003032</div>
-            <div>Gabriel Oliveira Faria - (RGM a definir)</div>
+            <div>Gabriel Oliveira Faria - 29615267</div>
           </div>
         </div>
       )}
