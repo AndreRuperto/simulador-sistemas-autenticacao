@@ -25,6 +25,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/components/ui/use-toast";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 // Interface para as props do componente
 interface AuthUserExperienceProps {
@@ -51,6 +53,7 @@ const AuthUserExperience: React.FC<AuthUserExperienceProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [activeState, setActiveState] = useState(currentState);
   const [automatonMode, setAutomatonMode] = useState<'DFA' | 'NFA'>('DFA');
+  const [use2FA, setUse2FA] = useState(true);
   const [registeredUsers, setRegisteredUsers] = useState([
     { username: "admin", password: "admin123", email: "admin@example.com", twoFAEnabled: true }
   ]);
@@ -203,7 +206,7 @@ const getAvailableTransitions = (state: string) => {
         username, 
         password, 
         email,
-        twoFAEnabled: automatonMode === 'NFA' // Ativar 2FA automaticamente para modo NFA
+        twoFAEnabled: automatonMode === 'NFA' && use2FA
       }]);
       
       setSuccess("Usuário cadastrado com sucesso!");
@@ -211,7 +214,7 @@ const getAvailableTransitions = (state: string) => {
       
       toast({
         title: "Cadastro realizado com sucesso",
-        description: automatonMode === 'NFA' 
+        description: automatonMode === 'NFA' && use2FA
           ? "Você já pode fazer login com suas credenciais (2FA habilitado)" 
           : "Você já pode fazer login com suas credenciais",
         variant: "default",
@@ -518,14 +521,23 @@ const getAvailableTransitions = (state: string) => {
                 </div>
                 
                 {automatonMode === "NFA" && (
-                  <Alert className="bg-blue-50 border-blue-200 text-blue-800">
-                    <Info className="h-4 w-4 text-blue-600" />
-                    <AlertTitle>Verificação em duas etapas</AlertTitle>
-                    <AlertDescription>
-                      No modo Avançado (AFN), sua conta será configurada automaticamente com verificação
-                      em duas etapas (2FA) para maior segurança.
-                    </AlertDescription>
-                  </Alert>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex-1">
+                        <Label htmlFor="use2fa" className="text-sm font-medium">
+                          Ativar verificação em duas etapas (2FA)
+                        </Label>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Recomendado para maior segurança da sua conta
+                        </p>
+                      </div>
+                      <Switch 
+                        id="use2fa" 
+                        checked={use2FA}
+                        onCheckedChange={setUse2FA}
+                      />
+                    </div>
+                  </div>
                 )}
                 
                 <div className="flex justify-between mt-6">
