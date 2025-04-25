@@ -411,7 +411,7 @@ const getAvailableTransitions = (state: string) => {
                 >
                   <div className="font-medium">Avançado (AFN)</div>
                   <p className="font-normal text-xs mt-2 px-4">
-                    Inclui verificação em <br></br>duas etapas (2FA)
+                    Pode incluir verificação em <br></br>duas etapas (2FA)
                   </p>
                 </Button>
               </div>

@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthUserExperience from "./AuthUserExperience";
+import { Switch } from "@/components/ui/switch";
 
 const AuthSimulator = () => {
   // Todos os estados e lógica do seu código original, mais a nova funcionalidade de cadastro
@@ -20,6 +21,7 @@ const AuthSimulator = () => {
   const [email, setEmail] = useState("");
   const [cadastroSuccess, setCadastroSuccess] = useState(false);
   const [cadastroError, setCadastroError] = useState("");
+  const [use2FAInNFA, setUse2FAInNFA] = useState(true);
   
   // Definições dos autômatos incluindo estados de cadastro
   const dfaStates = [
@@ -157,7 +159,28 @@ const AuthSimulator = () => {
     const currentState = type === "DFA" ? dfaCurrentState : nfaCurrentState;
     const transitions = type === "DFA" ? dfaTransitions : nfaTransitions;
     
-    // Encontrar a transição correspondente
+    // Para o NFA, trate especialmente a transição de senha correta
+    if (type === "NFA" && input === "c") {
+      // Se 2FA não estiver habilitado, vá direto para o acesso concedido
+      if (!use2FAInNFA) {
+        const newState = "q9"; // Estado de acesso concedido
+        setNfaCurrentState(newState);
+        
+        // Registrar no histórico
+        setHistory(prev => [...prev, {
+          type,
+          from: currentState,
+          to: newState,
+          input,
+          message: "Senha correta → Acesso Concedido (sem 2FA)",
+          timestamp: new Date().toLocaleTimeString()
+        }]);
+        
+        return;
+      }
+    }
+    
+    // Processamento normal para outras transições
     const transition = transitions.find(t => t.from === currentState && t.symbol === input);
     
     if (transition) {
@@ -741,7 +764,7 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                    <Badge variant="outline">AFN</Badge> Autenticação com 2FA
+                    <Badge variant="outline">AFN</Badge> Autenticação Avançado
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -767,7 +790,9 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
                           onClick={() => handleInput("NFA", input)}
                           className="min-w-[100px]"
                         >
-                          {inputLabels[input]}
+                          {input === 'c' && !use2FAInNFA ? 
+                            "Senha correta (sem 2FA)" : 
+                            inputLabels[input]}
                         </Button>
                       ))}
                       
@@ -807,10 +832,15 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
                 />
                 
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-                    <span className="text-indigo-600">Estado Atual: </span>
-                    <Badge variant="secondary" className="font-mono">{dfaCurrentState}</Badge>
-                  </h3>
+                <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <span className="text-indigo-600">Estado Atual: </span>
+                  <Badge variant="secondary" className="font-mono">{nfaCurrentState}</Badge>
+                  {nfaCurrentState && (
+                    <Badge variant={use2FAInNFA ? "default" : "outline"} className="ml-2">
+                      {use2FAInNFA ? "2FA Ativo" : "2FA Inativo"}
+                    </Badge>
+                  )}
+                </h3>
                   
                   <div className="flex flex-wrap gap-2 mt-2">
                     {getAvailableInputs("DFA", dfaCurrentState).map((input) => (
@@ -866,11 +896,32 @@ const AutomatonVisualizer = ({ states, transitions, currentState, type }) => {
           <TabsContent value="nfa">
             <Card>
               <CardHeader>
-                <CardTitle>Autenticação com 2FA (AFN)</CardTitle>
+                <CardTitle>Autenticação Avançado (AFN)</CardTitle>
                 <CardDescription>
                   Um modelo não-determinístico que representa um sistema completo com cadastro,
                   login e múltiplas opções de verificação em duas etapas.
                 </CardDescription>
+                <div className="mb-4 p-4 bg-indigo-50 rounded-lg flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-indigo-700 flex items-center gap-2">
+                      <Shield size={16} />
+                      Verificação em duas etapas (2FA)
+                    </h3>
+                    <p className="text-xs text-indigo-600 mt-1">
+                      Escolha se o usuário terá 2FA habilitado após autenticação bem-sucedida
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="nfa-2fa-toggle" className="text-sm text-indigo-700">
+                      Ativar 2FA
+                    </Label>
+                    <Switch 
+                      id="nfa-2fa-toggle" 
+                      checked={use2FAInNFA}
+                      onCheckedChange={setUse2FAInNFA}
+                    />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <AutomatonVisualizer
