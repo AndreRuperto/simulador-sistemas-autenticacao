@@ -54,6 +54,7 @@ const AuthUserExperience: React.FC<AuthUserExperienceProps> = ({
   const [activeState, setActiveState] = useState(currentState);
   const [automatonMode, setAutomatonMode] = useState<'DFA' | 'NFA'>('DFA');
   const [use2FA, setUse2FA] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [registeredUsers, setRegisteredUsers] = useState([
     { username: "admin", password: "admin123", email: "admin@example.com", twoFAEnabled: true }
   ]);
@@ -188,15 +189,30 @@ const getAvailableTransitions = (state: string) => {
   };
 
   // Manipuladores de ações do usuário
-  const handleRegister = () => {
-    // Validação
+  const handleRegister = async () => {
+    // Validação básica inicial
     const newErrors: Record<string, string> = {};
     if (!username) newErrors.username = "Nome de usuário é obrigatório";
     if (!email) newErrors.email = "Email é obrigatório";
+    else if (!validateEmail(email)) newErrors.email = "Email inválido. Use um formato válido como exemplo@gmail.com";
     if (!password) newErrors.password = "Senha é obrigatória";
     if (password !== confirmPassword) newErrors.confirmPassword = "As senhas não coincidem";
     if (password && password.length < 6) newErrors.password = "A senha deve ter pelo menos 6 caracteres";
     if (registeredUsers.some(u => u.username === username)) newErrors.username = "Este nome de usuário já existe";
+    
+    // Se passar na validação básica e tiver e-mail, verificar com API
+    if (Object.keys(newErrors).length === 0 && email) {
+      // Adicionar um estado de carregamento enquanto verifica
+      setLoading(true);
+      
+      const isEmailValid = await verifyEmailWithAPI(email);
+      
+      setLoading(false);
+      
+      if (!isEmailValid) {
+        newErrors.email = "Este e-mail parece não existir ou não pode receber mensagens";
+      }
+    }
     
     setErrors(newErrors);
     
@@ -313,7 +329,55 @@ const getAvailableTransitions = (state: string) => {
       }
     }
   };
-  
+
+  // Validação de e-mail utilizando expressão regular
+  const validateEmail = (email: string) => {
+    // Padrão básico para e-mail: deve conter @ e um domínio válido após o @
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    // Verificar formato geral do e-mail
+    return emailPattern.test(email);
+  };
+
+  // Função para verificar e-mail usando API externa
+  const verifyEmailWithAPI = async (email: string): Promise<boolean> => {
+    // Primeiro, fazer validação básica de formato para economizar chamadas à API
+    if (!validateEmail(email)) {
+      return false; // Se não passar na validação de formato, nem consulta a API
+    }
+    
+    try {
+      // Opção para verificar domínios comuns sem usar a API
+      // Verificação local de domínios populares para reduzir chamadas à API
+      const domain = email.split('@')[1].toLowerCase();
+      const commonDomains = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'icloud.com'];
+      
+      // Configurar verificação avançada apenas para domínios não comuns
+      if (commonDomains.includes(domain)) {
+        // Se for um domínio comum, consideramos válido sem chamar a API
+        return true;
+      }
+      
+      // Apenas domínios desconhecidos são verificados pela API
+      const apiKey = "590e31be75ed4f6b981bf8aeea67b118"; // Substitua pela sua chave real
+      const response = await fetch(
+        `https://emailvalidation.abstractapi.com/v1/?api_key=${apiKey}&email=${encodeURIComponent(email)}`
+      );
+      
+      const data = await response.json();
+      
+      // Verificar se o e-mail é válido com base na resposta da API
+      return data.is_valid_format.value && 
+             data.is_mx_found.value && 
+             data.deliverability !== "UNDELIVERABLE";
+            
+    } catch (error) {
+      console.error("Erro ao verificar e-mail:", error);
+      // Em caso de erro na API, aceita se passou na validação básica
+      return true; // Já passou na validação de formato no início da função
+    }
+  };
+
   const handleChoose2FAMethod = (method: string) => {
     setMethod2FA(method);
     
@@ -549,8 +613,9 @@ const getAvailableTransitions = (state: string) => {
                   </Button>
                   <Button 
                     onClick={handleRegister}
+                    disabled={loading}
                   >
-                    Cadastrar
+                    {loading ? "Verificando..." : "Cadastrar"}
                   </Button>
                 </div>
               </div>
