@@ -359,7 +359,7 @@ const getAvailableTransitions = (state: string) => {
       }
       
       // Apenas domínios desconhecidos são verificados pela API
-      const apiKey = "590e31be75ed4f6b981bf8aeea67b118"; // Substitua pela sua chave real
+      const apiKey = import.meta.env.API_KEY;
       const response = await fetch(
         `https://emailvalidation.abstractapi.com/v1/?api_key=${apiKey}&email=${encodeURIComponent(email)}`
       );
